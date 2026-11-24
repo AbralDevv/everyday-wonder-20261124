@@ -1,9 +1,22 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
-const entry = "A streetlamp flickers on at dusk and for one quiet second the whole ordinary street looks like it was lit just for me.";
+const LINE = `Popping a single pocket of bubble wrap frees a thimble of air sealed in an Ohio factory last October, and for one breath I share my kitchen with night-shift workers I will never meet.`;
 
-// Output dir: argv wins, then $MAKEFUN_OUTPUT_DIR, then /output (./output fallback handled by resolve).
-const outDir = resolve(process.argv[2] || process.env.MAKEFUN_OUTPUT_DIR || "/output");
-mkdirSync(outDir, { recursive: true });
-writeFileSync(join(outDir, "entry.txt"), entry, "utf8");
+function pickOutDir(): string {
+  const candidates = [process.env.MAKEFUN_OUTPUT_DIR, "/output", "./output"];
+  for (const dir of candidates) {
+    if (!dir) continue;
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      fs.accessSync(dir, fs.constants.W_OK);
+      return dir;
+    } catch {
+      // try the next candidate
+    }
+  }
+  throw new Error("no writable output dir");
+}
+
+const outDir = pickOutDir();
+fs.writeFileSync(path.join(outDir, "entry.txt"), LINE, "utf8");
